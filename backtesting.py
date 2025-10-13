@@ -72,63 +72,81 @@ def plot_trades(df, trades, asset):
     plt.show()
 
 # Hauptprogramm
-results = []
-initial_account_balance = 1000
+if __name__ == "__main__":
+    import sys
 
-ticker_map = {
-    "Tesla": "TSLA",
-    "Palantir": "PLTR",
-    "Siemens Energy": "ENR",
-    "Rocket Lab": "RKLB",
-    "Cyberark": "CYB",
-    "Symbotic": "SYM",
-    "Rheinmetall": "RHM",
-}
+    # Check for language preference
+    english = "--english" in sys.argv
 
-for asset, params in optimized_params.items():
-    ticker = ticker_map.get(asset)  # Map asset to ticker abbreviation
-    if not ticker:
-        print(f"Kein Ticker für {asset} gefunden. Überspringe.")
-        continue
+    results = []
+    initial_account_balance = 1000
 
-    file_path = os.path.join(data_folder, f"{ticker}_data.csv")
-    if os.path.exists(file_path):
-        print(f"Starte Backtesting für {asset}...")
-        df = pd.read_csv(file_path)
+    ticker_map = {
+        "Tesla": "TSLA",
+        "Palantir": "PLTR",
+        "Siemens Energy": "ENR",
+        "Rocket Lab": "RKLB",
+        "Cyberark": "CYB",
+        "Symbotic": "SYM",
+        "Rheinmetall": "RHM",
+    }
 
-        # Datenvorbereitung
-        df.rename(columns={"Date": "timestamp"}, inplace=True)
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        df.set_index("timestamp", inplace=True)
-        numeric_columns = ["High", "Low", "Close", "Open", "Volume"]
-        df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors="coerce")
-        df.dropna(subset=numeric_columns, inplace=True)
+    for asset, params in optimized_params.items():
+        ticker = ticker_map.get(asset)  # Map asset to ticker abbreviation
+        if not ticker:
+            if english:
+                print(f"No ticker found for {asset}. Skipping.")
+            else:
+                print(f"Kein Ticker für {asset} gefunden. Überspringe.")
+            continue
 
-        # Zeitraum für Backtesting (2022–2024)
-        test_df = df.loc["2022-01-01":"2024-12-31"]
+        file_path = os.path.join(data_folder, f"{ticker}_data.csv")
+        if os.path.exists(file_path):
+            if english:
+                print(f"Starting backtesting for {asset}...")
+            else:
+                print(f"Starte Backtesting für {asset}...")
+            df = pd.read_csv(file_path)
 
-        # Signale basierend auf den Parametern generieren
-        test_df["Buy_Signal"] = test_df["Close"] > test_df["High"].rolling(window=params["breakout_high_period"]).max().shift(1)
-        test_df["Sell_Signal"] = test_df["Close"] < test_df["Low"].rolling(window=params["breakout_low_period"]).min().shift(1)
-        test_df["ATR"] = test_df["High"] - test_df["Low"]  # ATR-Äquivalent basierend auf Preisspanne
+            # Datenvorbereitung
+            df.rename(columns={"Date": "timestamp"}, inplace=True)
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df.set_index("timestamp", inplace=True)
+            numeric_columns = ["High", "Low", "Close", "Open", "Volume"]
+            df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors="coerce")
+            df.dropna(subset=numeric_columns, inplace=True)
 
-        # Backtesting
-        total_profit, trades = backtest_turtle_strategy(test_df, params, initial_account_balance)
+            # Zeitraum für Backtesting (2022–2024)
+            test_df = df.loc["2022-01-01":"2024-12-31"]
 
-        # Speichern der Trades
-        trades_df = pd.DataFrame(trades)
-        trades_df.to_csv(os.path.join(results_folder, f"{asset}_trades.csv"), index=False)
+            # Signale basierend auf den Parametern generieren
+            test_df["Buy_Signal"] = test_df["Close"] > test_df["High"].rolling(window=params["breakout_high_period"]).max().shift(1)
+            test_df["Sell_Signal"] = test_df["Close"] < test_df["Low"].rolling(window=params["breakout_low_period"]).min().shift(1)
+            test_df["ATR"] = test_df["High"] - test_df["Low"]  # ATR-Äquivalent basierend auf Preisspanne
 
-        # Ergebnisse speichern
-        results.append({"asset": asset, "total_profit": total_profit, "number_of_trades": len(trades)})
+            # Backtesting
+            total_profit, trades = backtest_turtle_strategy(test_df, params, initial_account_balance)
 
-        # Visualisierung
-        plot_trades(test_df, trades, asset)
+            # Speichern der Trades
+            trades_df = pd.DataFrame(trades)
+            trades_df.to_csv(os.path.join(results_folder, f"{asset}_trades.csv"), index=False)
+
+            # Ergebnisse speichern
+            results.append({"asset": asset, "total_profit": total_profit, "number_of_trades": len(trades)})
+
+            # Visualisierung
+            plot_trades(test_df, trades, asset)
+        else:
+            if english:
+                print(f"Data for {asset} not found: {file_path}")
+            else:
+                print(f"Daten für {asset} nicht gefunden: {file_path}")
+
+    # Gesamtergebnisse speichern
+    results_df = pd.DataFrame(results)
+    results_df.to_csv(os.path.join(results_folder, "backtesting_results_2022_2024.csv"), index=False)
+    if english:
+        print("Backtesting completed. Results saved to backtesting_results_2022_2024.csv.")
     else:
-        print(f"Daten für {asset} nicht gefunden: {file_path}")
-
-# Gesamtergebnisse speichern
-results_df = pd.DataFrame(results)
-results_df.to_csv(os.path.join(results_folder, "backtesting_results_2022_2024.csv"), index=False)
-print("Backtesting abgeschlossen. Ergebnisse gespeichert unter backtesting_results_2022_2024.csv.")
+        print("Backtesting abgeschlossen. Ergebnisse gespeichert unter backtesting_results_2022_2024.csv.")
 
