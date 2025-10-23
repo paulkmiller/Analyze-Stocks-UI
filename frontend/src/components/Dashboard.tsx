@@ -38,6 +38,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onStockSelect }) => {
     }
   };
 
+  // new comment about new thing we're making
+  // TODO: make the new thing
+  // TODO:
+
   const retryStockData = async (ticker: string) => {
     try {
       setRetryingTicker(ticker);
