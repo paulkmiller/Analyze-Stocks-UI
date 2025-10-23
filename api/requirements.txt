@@ -1,0 +1,7 @@
+Flask==3.0.0
+Flask-CORS==4.0.0
+pandas==2.2.0
+numpy==1.26.0
+yfinance==0.2.32
+matplotlib==3.8.2
+schedule==1.2.2

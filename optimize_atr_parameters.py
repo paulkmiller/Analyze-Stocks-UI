@@ -91,53 +91,71 @@ def optimize_params_2005_2021(df, params_range, account_balance):
     return best_params, best_profit
 
 # Hauptprogramm
-optimized_results = []
-initial_account_balance = 100000  # Startkapital
+if __name__ == "__main__":
+    import sys
 
-for market_name, ticker in markets.items():
-    file_path = os.path.join(data_folder, f"{ticker}_data.csv")
-    if os.path.exists(file_path):
-        print(f"Starte Turtle-Optimierung für {market_name} ({ticker})...")
-        df = pd.read_csv(file_path)
+    # Check for language preference
+    english = "--english" in sys.argv
 
-        # Datenvorbereitung
-        df.rename(columns={"Date": "timestamp"}, inplace=True)
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        df.set_index("timestamp", inplace=True)
-        numeric_columns = ["High", "Low", "Close", "Open", "Volume"]
-        df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors="coerce")
-        df.dropna(subset=numeric_columns, inplace=True)
+    optimized_results = []
+    initial_account_balance = 100000  # Startkapital
 
-        # Zeitraum für Optimierung (2005–2021)
-        train_df = df.loc["2005-01-01":"2021-12-31"]
+    for market_name, ticker in markets.items():
+        file_path = os.path.join(data_folder, f"{ticker}_data.csv")
+        if os.path.exists(file_path):
+            if english:
+                print(f"Starting Turtle optimization for {market_name} ({ticker})...")
+            else:
+                print(f"Starte Turtle-Optimierung für {market_name} ({ticker})...")
+            df = pd.read_csv(file_path)
 
-        # Parameter optimieren
-        best_params, best_profit = optimize_params_2005_2021(
-            train_df,
-            {
-                "breakout_high_periods": breakout_high_periods,
-                "breakout_low_periods": breakout_low_periods,
-                "atr_multiplier": atr_multiplier,
-            },
-            initial_account_balance
-        )
-        print(f"Beste Parameter für {market_name}: {best_params} mit Gewinn: {best_profit:.2f}")
+            # Datenvorbereitung
+            df.rename(columns={"Date": "timestamp"}, inplace=True)
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df.set_index("timestamp", inplace=True)
+            numeric_columns = ["High", "Low", "Close", "Open", "Volume"]
+            df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors="coerce")
+            df.dropna(subset=numeric_columns, inplace=True)
 
-        optimized_results.append({
-            "asset": market_name,
-            "breakout_high_period": best_params["breakout_high_period"],
-            "breakout_low_period": best_params["breakout_low_period"],
-            "atr_multiplier": best_params["atr_multiplier"],
-            "profit": best_profit,
-        })
+            # Zeitraum für Optimierung (2005–2021)
+            train_df = df.loc["2005-01-01":"2021-12-31"]
+
+            # Parameter optimieren
+            best_params, best_profit = optimize_params_2005_2021(
+                train_df,
+                {
+                    "breakout_high_periods": breakout_high_periods,
+                    "breakout_low_periods": breakout_low_periods,
+                    "atr_multiplier": atr_multiplier,
+                },
+                initial_account_balance
+            )
+            if english:
+                print(f"Best parameters for {market_name}: {best_params} with profit: {best_profit:.2f}")
+            else:
+                print(f"Beste Parameter für {market_name}: {best_params} mit Gewinn: {best_profit:.2f}")
+
+            optimized_results.append({
+                "asset": market_name,
+                "breakout_high_period": best_params["breakout_high_period"],
+                "breakout_low_period": best_params["breakout_low_period"],
+                "atr_multiplier": best_params["atr_multiplier"],
+                "profit": best_profit,
+            })
+        else:
+            if english:
+                print(f"File for {market_name} ({ticker}) not found: {file_path}")
+            else:
+                print(f"Datei für {market_name} ({ticker}) nicht gefunden: {file_path}")
+
+    # Ergebnisse speichern
+    optimized_params_df = pd.DataFrame(optimized_results)
+    optimized_params_file = os.path.join(base_folder, "optimized_params_2005_2021.csv")
+    optimized_params_df.to_csv(optimized_params_file, index=False)
+    if english:
+        print(f"Optimized Turtle parameters saved at: {optimized_params_file}")
     else:
-        print(f"Datei für {market_name} ({ticker}) nicht gefunden: {file_path}")
-
-# Ergebnisse speichern
-optimized_params_df = pd.DataFrame(optimized_results)
-optimized_params_file = os.path.join(base_folder, "optimized_params_2005_2021.csv")
-optimized_params_df.to_csv(optimized_params_file, index=False)
-print(f"Optimierte Turtle-Parameter gespeichert unter: {optimized_params_file}")
+        print(f"Optimierte Turtle-Parameter gespeichert unter: {optimized_params_file}")
 
 
 
